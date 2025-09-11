@@ -132,13 +132,11 @@ while True :
                 while len(unacked_publish):
                     time.sleep(0.1)
                     msg_info.wait_for_publish()
+            else:
+                print("Message already processed")
 
         except json.JSONDecodeError as e:
             print("Invalid JSON syntax:", e)
-
-        else:
-            print("Message already processed")
-
 
 
     # Print packet/signal status including RSSI, SNR, and signalRSSI
