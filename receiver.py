@@ -127,6 +127,11 @@ while True :
             data["timestamp"] = time.time()
 
             msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
+            unacked_publish.add(msg_info.mid)
+            # Wait for all message to be published
+            while len(unacked_publish):
+                time.sleep(0.1)
+                msg_info.wait_for_publish()
 
         else:
             print("Message already processed")
