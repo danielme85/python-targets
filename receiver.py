@@ -14,7 +14,7 @@ MAX_SIZE = 10
 # The 'maxlen' argument ensures the list never exceeds 10 items.
 processed_messages = deque(maxlen=MAX_SIZE)
 
-def process_message(message_id: str) -> bool:
+def should_process_message(message_id: str) -> bool:
     """
     Checks if a message has been processed. If not, it adds the ID to the
     history and returns True. If it has, it returns False.
@@ -121,7 +121,7 @@ while True :
 
         data = json.loads(extracted_text)
 
-        if not process_message(data["id"]):
+        if should_process_message(data["id"]):
             data["rssi"] = LoRa.packetRssi()
             data["snr"] = LoRa.snr()
             data["timestamp"] = time.time()
