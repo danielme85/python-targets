@@ -2,9 +2,30 @@ import os, sys
 currentdir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(currentdir)))
 from LoRaRF import SX126x
+from collections import deque
 import time
 import paho.mqtt.client as mqtt
 import json
+
+# Define the maximum size of the history
+MAX_SIZE = 10
+
+# Initialize a deque to store the UUIDs.
+# The 'maxlen' argument ensures the list never exceeds 10 items.
+processed_messages = deque(maxlen=MAX_SIZE)
+
+def process_message(message_id: str) -> bool:
+    """
+    Checks if a message has been processed. If not, it adds the ID to the
+    history and returns True. If it has, it returns False.
+    """
+    if message_id in processed_messages:
+        print(f"Message ID {message_id} was already processed.")
+        return False
+    else:
+        processed_messages.append(message_id)
+        print(f"Processing message ID {message_id}...")
+        return True
 
 def on_publish(client, userdata, mid):
     # reason_code and properties will only be present in MQTTv5. It's always unset in MQTTv3
@@ -99,15 +120,18 @@ while True :
         print(f"Extracted text: {extracted_text}")
 
         data = json.loads(extracted_text)
-        data["rssi"] = LoRa.packetRssi()
-        data["snr"] = LoRa.snr()
-        data["timestamp"] = time.time()
-        msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
-        unacked_publish.add(msg_info.mid)
-        # Wait for all message to be published
-        while len(unacked_publish):
-           time.sleep(0.1)
-           msg_info.wait_for_publish()
+
+        if not process_message(data["message_id"]):
+            data["rssi"] = LoRa.packetRssi()
+            data["snr"] = LoRa.snr()
+            data["timestamp"] = time.time()
+
+            msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
+
+        else:
+            print("Message already processed")
+
+
 
     # Print packet/signal status including RSSI, SNR, and signalRSSI
     print("Packet status: RSSI = {0:0.2f} dBm | SNR = {1:0.2f} dB".format(LoRa.packetRssi(), LoRa.snr()))
@@ -117,7 +141,3 @@ while True :
     if status == LoRa.STATUS_CRC_ERR : print("CRC error")
     elif status == LoRa.STATUS_HEADER_ERR : print("Packet header error")
 
-try :
-    pass
-except :
-    LoRa.end()
