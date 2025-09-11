@@ -121,7 +121,7 @@ while True :
 
         data = json.loads(extracted_text)
 
-        if not process_message(data["message_id"]):
+        if not process_message(data["id"]):
             data["rssi"] = LoRa.packetRssi()
             data["snr"] = LoRa.snr()
             data["timestamp"] = time.time()
