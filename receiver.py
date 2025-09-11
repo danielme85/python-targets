@@ -108,7 +108,6 @@ while True :
     # available() method return remaining received payload length and will decrement each read() or get() method called
     while LoRa.available() > 1 :
         message += chr(LoRa.read())
-    counter = LoRa.read()
 
     print(message)
 
