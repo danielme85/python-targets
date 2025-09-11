@@ -119,19 +119,22 @@ while True :
         extracted_text = message[start_char_index:end_char_index]
         print(f"Extracted text: {extracted_text}")
 
-        data = json.loads(extracted_text)
+        try:
+            data = json.loads(extracted_text)
+            if should_process_message(data["id"]):
+                data["rssi"] = LoRa.packetRssi()
+                data["snr"] = LoRa.snr()
+                data["timestamp"] = time.time()
 
-        if should_process_message(data["id"]):
-            data["rssi"] = LoRa.packetRssi()
-            data["snr"] = LoRa.snr()
-            data["timestamp"] = time.time()
+                msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
+                unacked_publish.add(msg_info.mid)
+                # Wait for all message to be published
+                while len(unacked_publish):
+                    time.sleep(0.1)
+                    msg_info.wait_for_publish()
 
-            msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
-            unacked_publish.add(msg_info.mid)
-            # Wait for all message to be published
-            while len(unacked_publish):
-                time.sleep(0.1)
-                msg_info.wait_for_publish()
+        except json.JSONDecodeError as e:
+            print("Invalid JSON syntax:", e)
 
         else:
             print("Message already processed")
