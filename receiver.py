@@ -3,6 +3,33 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(currentdir)))
 from LoRaRF import SX126x
 import time
+import paho.mqtt.client as mqtt
+import json
+
+def on_publish(client, userdata, mid):
+    # reason_code and properties will only be present in MQTTv5. It's always unset in MQTTv3
+    try:
+        userdata.remove(mid)
+    except KeyError:
+        print("on_publish() is called with a mid not present in unacked_publish")
+        print("This is due to an unavoidable race-condition:")
+        print("* publish() return the mid of the message sent.")
+        print("* mid from publish() is added to unacked_publish by the main thread")
+        print("* on_publish() is called by the loop_start thread")
+        print("While unlikely (because on_publish() will be called after a network round-trip),")
+        print(" this is a race-condition that COULD happen")
+        print("")
+        print("The best solution to avoid race-condition is using the msg_info from publish()")
+        print("We could also try using a list of acknowledged mid rather than removing from pending list,")
+        print("but remember that mid could be re-used !")
+
+unacked_publish = set()
+mqttc = mqtt.Client()
+mqttc.on_publish = on_publish
+mqttc.user_data_set(unacked_publish)
+mqttc.connect("localhost")
+mqttc.loop_start()
+
 
 # Begin LoRa radio and set NSS, reset, busy, IRQ, txen, and rxen pin with connected Raspberry Pi gpio pins
 # IRQ pin not used in this example (set to -1). Set txen and rxen pin to -1 if RF module doesn't have one
@@ -37,7 +64,7 @@ print("Set packet parameters:\n\tExplicit header type\n\tPreamble length = 12\n\
 headerType = LoRa.HEADER_EXPLICIT                               # Explicit header mode
 preambleLength = 8                                             # Set preamble length to 12
 payloadLength = 255                                             # Initialize payloadLength to 15
-crcType = False                                                  # Set CRC enable
+crcType = True                                                  # Set CRC enable
 LoRa.setLoRaPacket(headerType, preambleLength, payloadLength, crcType)
 
 # Set syncronize word for public network (0x3444)
@@ -62,8 +89,25 @@ while True :
         message += chr(LoRa.read())
     counter = LoRa.read()
 
-    # Print received message and counter in serial
-    print(f"{message}  {counter}")
+    print(message)
+
+    start_char_index = message.find("{")
+    end_char_index = message.find("}") + len("}")
+
+    if start_char_index != -1 and end_char_index != -1:
+        extracted_text = message[start_char_index:end_char_index]
+        print(f"Extracted text: {extracted_text}")
+
+        data = json.loads(extracted_text)
+        data["rssi"] = LoRa.packetRssi()
+        data["snr"] = LoRa.snr()
+        data["timestamp"] = time.time()
+        msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
+        unacked_publish.add(msg_info.mid)
+        # Wait for all message to be published
+        while len(unacked_publish):
+           time.sleep(0.1)
+           msg_info.wait_for_publish()
 
     # Print packet/signal status including RSSI, SNR, and signalRSSI
     print("Packet status: RSSI = {0:0.2f} dBm | SNR = {1:0.2f} dB".format(LoRa.packetRssi(), LoRa.snr()))
