@@ -1,4 +1,6 @@
 import os, sys
+from time import sleep
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(currentdir)))
 from LoRaRF import SX126x
@@ -131,8 +133,6 @@ while True :
                 while len(unacked_publish):
                     time.sleep(0.1)
                     msg_info.wait_for_publish()
-            else:
-                print("Message already processed")
 
         except json.JSONDecodeError as e:
             print("Invalid JSON syntax:", e)
@@ -144,5 +144,7 @@ while True :
     # Show received status in case CRC or header error occur
     status = LoRa.status()
     if status == LoRa.STATUS_CRC_ERR : print("CRC error")
-    elif status == LoRa.STATUS_HEADER_ERR : print("Packet header error")
-
+    elif status == LoRa.STATUS_HEADER_ERR:
+        print("Packet header error")
+        sleep(2)
+        continue
