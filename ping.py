@@ -57,6 +57,6 @@ jsonData = {
 }
 
 LoRa.beginPacket()
-LoRa.write(json.dumps(jsonData))
+LoRa.write(jsonData)
 LoRa.endPacket()
 LoRa.wait()
