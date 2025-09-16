@@ -63,3 +63,30 @@ LoRa.beginPacket()
 LoRa.write(messageList, len(messageList))
 LoRa.endPacket()
 LoRa.wait()
+
+# Receive message continuously
+while True :
+
+    # Request for receiving new LoRa packet
+    LoRa.request()
+    # Wait for incoming LoRa packet
+    LoRa.wait()
+
+    # Put received packet to message and counter variable
+    # read() and available() method must be called after request() or listen() method
+    message = ""
+    # available() method return remaining received payload length and will decrement each read() or get() method called
+    while LoRa.available() > 1 :
+        message += chr(LoRa.read())
+    counter = LoRa.read()
+
+    # Print received message and counter in serial
+    print(f"{message}  {counter}")
+
+    # Print packet/signal status including RSSI, SNR, and signalRSSI
+    print("Packet status: RSSI = {0:0.2f} dBm | SNR = {1:0.2f} dB".format(LoRa.packetRssi(), LoRa.snr()))
+
+    # Show received status in case CRC or header error occur
+    status = LoRa.status()
+    if status == LoRa.STATUS_CRC_ERR : print("CRC error")
+    elif status == LoRa.STATUS_HEADER_ERR : print("Packet header error")
