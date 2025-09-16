@@ -58,9 +58,7 @@ jsonData = {
     "to": "target2"
 }
 
-print ("Sending packet: ", json.dumps(jsonData))
-
-messageString = '***' + json.dumps(jsonData) + '***'
+messageString = '***' + json.dumps(jsonData) + '***\0'
 print(f"Message: \'{messageString}\'")
 messageList = list(messageString)
 LoRa.beginPacket()
