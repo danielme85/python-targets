@@ -61,8 +61,13 @@ jsonData = {
 messageString = '***' + json.dumps(jsonData) + '***\0'
 print(f"Message: \'{messageString}\'")
 messageList = list(messageString)
+for i in range(len(messageList)) : messageList[i] = ord(messageList[i])
+counter = 0
+
+
 LoRa.beginPacket()
 LoRa.write(messageList, len(messageList))
+LoRa.write([counter], 1)
 LoRa.endPacket()
 LoRa.wait()
 
