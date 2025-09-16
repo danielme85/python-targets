@@ -53,7 +53,7 @@ print("\n-- LoRa Receiver --\n")
 
 jsonData = {
     "command": "status",
-    "id": uuid.uuid4(),
+    "id": uuid.uuid4().hex,
 }
 
 LoRa.beginPacket()
