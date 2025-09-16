@@ -56,7 +56,9 @@ jsonData = {
     "id": uuid.uuid4().hex,
 }
 
+print ("Sending packet: ", json.dumps(jsonData))
+
 LoRa.beginPacket()
-LoRa.write(jsonData)
+LoRa.write(json.dumps(jsonData))
 LoRa.endPacket()
 LoRa.wait()
