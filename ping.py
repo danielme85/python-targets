@@ -60,7 +60,9 @@ jsonData = {
 
 print ("Sending packet: ", json.dumps(jsonData))
 
-messageList = list('***' + json.dumps(jsonData) + '***')
+messageString = '***' + json.dumps(jsonData) + '***'
+print(f"Message: \'{messageString}\'")
+messageList = list(messageString)
 LoRa.beginPacket()
 LoRa.write(messageList, len(messageList))
 LoRa.endPacket()
