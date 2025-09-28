@@ -99,52 +99,52 @@ print("\n-- LoRa Receiver --\n")
 
 # Receive message continuously
 while True :
+
     # Request for receiving new LoRa packet
     LoRa.request()
     # Wait for incoming LoRa packet
     LoRa.wait()
 
-    status = LoRa.status()
-    if status == LoRa.OK :
-        # Put received packet to message and counter variable
-        # read() and available() method must be called after request() or listen() method
-        message = ""
-        # available() method return remaining received payload length and will decrement each read() or get() method called
-        while LoRa.available() > 1:
-            message += chr(LoRa.read())
+    # Put received packet to message and counter variable
+    # read() and available() method must be called after request() or listen() method
+    message = ""
+    # available() method return remaining received payload length and will decrement each read() or get() method called
+    while LoRa.available() > 1 :
+        message += chr(LoRa.read())
 
-        now = datetime.datetime.now()
-        print(now)
-        print(message)
+    now = datetime.datetime.now()
+    print(now)
+    print(message)
 
-        start_char_index = message.find("{")
-        end_char_index = message.find("}") + len("}")
+    start_char_index = message.find("{")
+    end_char_index = message.find("}") + len("}")
 
-        if start_char_index != -1 and end_char_index != -1:
-            extracted_text = message[start_char_index:end_char_index]
-            # print(f"Extracted text: {extracted_text}")
+    if start_char_index != -1 and end_char_index != -1:
+        extracted_text = message[start_char_index:end_char_index]
+        #print(f"Extracted text: {extracted_text}")
 
-            try:
-                data = json.loads(extracted_text)
-                if should_process_message(data["id"]):
-                    data["rssi"] = LoRa.packetRssi()
-                    data["snr"] = LoRa.snr()
-                    data["timestamp"] = time.time()
+        try:
+            data = json.loads(extracted_text)
+            if should_process_message(data["id"]):
+                data["rssi"] = LoRa.packetRssi()
+                data["snr"] = LoRa.snr()
+                data["timestamp"] = time.time()
 
-                    msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
-                    unacked_publish.add(msg_info.mid)
-                    # Wait for all message to be published
-                    while len(unacked_publish):
-                        time.sleep(0.1)
-                        msg_info.wait_for_publish()
+                msg_info = mqttc.publish("targets/hits", json.dumps(data), qos=1)
+                unacked_publish.add(msg_info.mid)
+                # Wait for all message to be published
+                while len(unacked_publish):
+                    time.sleep(0.1)
+                    msg_info.wait_for_publish()
 
-            except json.JSONDecodeError as e:
-                print("Invalid JSON syntax:", e)
+        except json.JSONDecodeError as e:
+            print("Invalid JSON syntax:", e)
 
-        # Print packet/signal status including RSSI, SNR, and signalRSSI
-        print("Packet status: RSSI = {0:0.2f} dBm | SNR = {1:0.2f} dB".format(LoRa.packetRssi(), LoRa.snr()))
-        print("\n")
 
+    # Print packet/signal status including RSSI, SNR, and signalRSSI
+    print("Packet status: RSSI = {0:0.2f} dBm | SNR = {1:0.2f} dB".format(LoRa.packetRssi(), LoRa.snr()))
+    print("\n")
     # Show received status in case CRC or header error occur
-    else :
+    status = LoRa.status()
+    if status != LoRa.STATUS_DEFAULT :
         sleep(1)
