@@ -8,6 +8,7 @@ from collections import deque
 import time
 import paho.mqtt.client as mqtt
 import json
+import datetime
 
 # Define the maximum size of the history
 MAX_SIZE = 10
@@ -91,7 +92,7 @@ crcType = True                                                  # Set CRC enable
 LoRa.setLoRaPacket(headerType, preambleLength, payloadLength, crcType)
 
 # Set syncronize word for public network (0x3444)
-print("Set syncronize word to 0xF3")
+print("Set syncronize word to 0x12	")
 LoRa.setSyncWord(0x12)
 
 print("\n-- LoRa Receiver --\n")
@@ -111,6 +112,8 @@ while True :
     while LoRa.available() > 1 :
         message += chr(LoRa.read())
 
+    now = datetime.datetime.now()
+    print(now)
     print(message)
 
     start_char_index = message.find("{")
@@ -118,7 +121,7 @@ while True :
 
     if start_char_index != -1 and end_char_index != -1:
         extracted_text = message[start_char_index:end_char_index]
-        print(f"Extracted text: {extracted_text}")
+        #print(f"Extracted text: {extracted_text}")
 
         try:
             data = json.loads(extracted_text)
@@ -141,6 +144,7 @@ while True :
     # Print packet/signal status including RSSI, SNR, and signalRSSI
     print("Packet status: RSSI = {0:0.2f} dBm | SNR = {1:0.2f} dB".format(LoRa.packetRssi(), LoRa.snr()))
 
+    print("\n")
     # Show received status in case CRC or header error occur
     status = LoRa.status()
     if status == LoRa.STATUS_CRC_ERR : print("CRC error")
