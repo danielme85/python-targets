@@ -71,7 +71,7 @@ LoRa.setFrequency(915000000)
 
 # Set RX gain. RX gain option are power saving gain or boosted gain
 #print("Set RX gain to power saving gain")
-#LoRa.setRxGain(LoRa.RX_GAIN_POWER_SAVING)                       # Power saving gain
+LoRa.setRxGain(LoRa.RX_GAIN_BOOSTED)                       # Power saving gain
 
 # Configure modulation parameter including spreading factor (SF), bandwidth (BW), and coding rate (CR)
 # Receiver must have same SF and BW setting with transmitter to be able to receive LoRa packet
